@@ -28,6 +28,7 @@ namespace zim
 {
   class Dirent;
   class FileImpl;
+  class FilePart;
 
   class Item
   {
@@ -74,11 +75,33 @@ namespace zim
        *
        * @return A pair of filename/offset specifying where read the content.
        *         If it is not possible to have direct access for this item,
-       *         return a pair of `""/0`
+       *         return a pair of `{"", 0}`
        */
       std::pair<std::string, offset_type> getDirectAccessInformation() const;
 
+      /** Direct access information using a file descriptor.
+       *
+       * Similar to getDirectAccessInformation(), but returns a file descriptor
+       * instead of the file path.
+       *
+       * @return A pair of file-descriptor/offset specifying where read the
+       *         content. The content must be read from the returned
+       *         file-descriptor only via `pread()` (no `seek()`-ing or
+       *         otherwise changing the state of the file-descriptor is
+       *         allowed).
+       *         If it is not possible to have direct access for this item,
+       *         a `{-1, 0}` pair is returned. Otherwise, the returned
+       *         file-descriptor is valid only for the life-time of the
+       *         `zim::Archive` object from which this `Item` object has been
+       *         obtained.
+       */
+      // TODO: rename this method
+      std::pair<int, offset_type> getDirectAccessInformationViaFD() const;
+
       entry_index_type getIndex() const   { return m_idx; }
+
+    private:
+      std::pair<FilePart*, offset_type> offsetInFilePart() const;
 
     private:
       std::shared_ptr<FileImpl> m_file;

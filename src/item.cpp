@@ -73,11 +73,11 @@ size_type Item::getSize() const
   return size_type(cluster->getBlobSize(m_dirent->getBlobNumber()));
 }
 
-std::pair<std::string, offset_type> Item::getDirectAccessInformation() const
+std::pair<FilePart*, offset_type> Item::offsetInFilePart() const
 {
   auto cluster = m_file->getCluster(m_dirent->getClusterNumber());
   if (cluster->isCompressed()) {
-    return std::make_pair("", 0);
+    return std::make_pair(nullptr, 0);
   }
 
   auto full_offset = m_file->getBlobOffset(m_dirent->getClusterNumber(),
@@ -87,10 +87,29 @@ std::pair<std::string, offset_type> Item::getDirectAccessInformation() const
   auto first_part = part_its.first;
   if (++part_its.first != part_its.second) {
    // The content is split on two parts. We cannot have direct access
-    return std::make_pair("", 0);
+    return std::make_pair(nullptr, 0);
   }
   auto range = first_part->first;
   auto part = first_part->second;
   auto local_offset = full_offset - range.min;
-  return std::make_pair(part->filename(), offset_type(local_offset));
+  return {part, offset_type(local_offset)};
+}
+
+std::pair<std::string, offset_type> Item::getDirectAccessInformation() const
+{
+  const auto p = offsetInFilePart();
+  if ( p.first )
+    return std::make_pair(p.first->filename(), p.second);
+  else
+    return {"", 0};
+}
+
+std::pair<int, offset_type> Item::getDirectAccessInformationViaFD() const
+{
+#ifndef _WIN32
+  const auto p = offsetInFilePart();
+  if ( p.first )
+    return std::make_pair(p.first->fhandle().getNativeHandle(), p.second);
+#endif
+  return {-1, 0};
 }
