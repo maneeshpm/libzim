@@ -108,8 +108,10 @@ Item::DirectAccessViaFDInfo Item::getDirectAccessInformationViaFD() const
 {
 #ifndef _WIN32
   const auto p = offsetInFilePart();
-  if ( p.first )
-    return std::make_pair(p.first->fhandle().getNativeHandle(), p.second);
+  if ( p.first ) {
+    offset_type offset = p.second + m_file->getArchiveStartOffset().v;
+    return std::make_pair(p.first->fhandle().getNativeHandle(), offset);
+  }
 #endif
   return {-1, 0};
 }
