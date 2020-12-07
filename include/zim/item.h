@@ -32,7 +32,11 @@ namespace zim
 
   class Item
   {
-    public:
+    public: // types
+      typedef std::pair<std::string, offset_type> DirectAccessInfo;
+      typedef std::pair<int, offset_type> DirectAccessViaFDInfo;
+
+    public: // functions
       explicit Item(std::shared_ptr<FileImpl> file_, entry_index_type idx_);
 
       std::string getTitle() const;
@@ -77,7 +81,7 @@ namespace zim
        *         If it is not possible to have direct access for this item,
        *         return a pair of `{"", 0}`
        */
-      std::pair<std::string, offset_type> getDirectAccessInformation() const;
+      DirectAccessInfo getDirectAccessInformation() const;
 
       /** Direct access information using a file descriptor.
        *
@@ -96,14 +100,14 @@ namespace zim
        *         obtained.
        */
       // TODO: rename this method
-      std::pair<int, offset_type> getDirectAccessInformationViaFD() const;
+      DirectAccessViaFDInfo getDirectAccessInformationViaFD() const;
 
       entry_index_type getIndex() const   { return m_idx; }
 
-    private:
+    private: // functions
       std::pair<FilePart*, offset_type> offsetInFilePart() const;
 
-    private:
+    private: // data
       std::shared_ptr<FileImpl> m_file;
       entry_index_type m_idx;
       std::shared_ptr<const Dirent> m_dirent;

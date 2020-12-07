@@ -95,7 +95,7 @@ std::pair<FilePart*, offset_type> Item::offsetInFilePart() const
   return {part, offset_type(local_offset)};
 }
 
-std::pair<std::string, offset_type> Item::getDirectAccessInformation() const
+Item::DirectAccessInfo Item::getDirectAccessInformation() const
 {
   const auto p = offsetInFilePart();
   if ( p.first )
@@ -104,7 +104,7 @@ std::pair<std::string, offset_type> Item::getDirectAccessInformation() const
     return {"", 0};
 }
 
-std::pair<int, offset_type> Item::getDirectAccessInformationViaFD() const
+Item::DirectAccessViaFDInfo Item::getDirectAccessInformationViaFD() const
 {
 #ifndef _WIN32
   const auto p = offsetInFilePart();

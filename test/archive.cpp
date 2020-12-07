@@ -366,4 +366,50 @@ TEST(ZimArchive, openZIMFileEmbeddedInAnotherFile)
   checkEquivalence(archive1, archive2);
 }
 
+typedef zim::DEFAULTFS::FD FD;
+
+zim::Blob readItemData(const FD& fd, zim::offset_t offset, zim::zsize_t size)
+{
+  std::shared_ptr<char> data(new char[size.v]);
+  fd.readAt(data.get(), size, offset);
+  return zim::Blob(data, size.v);
+}
+
+zim::Blob readItemData(const zim::Item::DirectAccessInfo& dai, zim::size_type size)
+{
+  FD fd(zim::DEFAULTFS::openFile(dai.first));
+  return readItemData(fd, zim::offset_t(dai.second), zim::zsize_t(size));
+}
+
+zim::Blob readItemData(const zim::Item::DirectAccessViaFDInfo& dai, zim::size_type size)
+{
+  FD fd(dai.first);
+  std::shared_ptr<FD> fdReleaser(&fd, [](FD* fd) { fd->release(); });
+  return readItemData(fd, zim::offset_t(dai.second), zim::zsize_t(size));
+}
+
+TEST(ZimArchive, getDirectAccessInformation)
+{
+  const zim::Archive archive("./data/small.zim");
+  zim::entry_index_type checkedItemCount = 0, checkedItemCountFD = 0;
+  for ( auto entry : archive.iterEfficient() ) {
+    if (!entry.isRedirect()) {
+      const TestContext ctx{ {"entry", entry.getPath() } };
+      const auto item = entry.getItem();
+      const auto dai = item.getDirectAccessInformation();
+      const auto dai_fd = item.getDirectAccessInformationViaFD();
+      if ( dai.first != "" ) {
+        ++checkedItemCount;
+        EXPECT_EQ(item.getData(), readItemData(dai, item.getSize())) << ctx;
+      }
+      if ( dai_fd.first != -1 ) {
+        ++checkedItemCountFD;
+        EXPECT_EQ(item.getData(), readItemData(dai_fd, item.getSize())) << ctx;
+      }
+    }
+  }
+  ASSERT_NE(0, checkedItemCount);
+  ASSERT_NE(0, checkedItemCountFD);
+}
+
 } // unnamed namespace
