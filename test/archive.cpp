@@ -412,4 +412,25 @@ TEST(ZimArchive, getDirectAccessInformation)
   ASSERT_NE(0, checkedItemCountFD);
 }
 
+TEST(ZimArchive, getDirectAccessInformationFromEmbeddedArchive)
+{
+  const int fd = OPEN_READ_ONLY("./data/small.zim.embedded");
+  const auto size = zim::DEFAULTFS::openFile("./data/small.zim").getSize();
+  const zim::Archive archive(fd, 8, size.v);
+  zim::entry_index_type checkedItemCountFD = 0;
+  for ( auto entry : archive.iterEfficient() ) {
+    if (!entry.isRedirect()) {
+      const TestContext ctx{ {"entry", entry.getPath() } };
+      const auto item = entry.getItem();
+      ASSERT_EQ("", item.getDirectAccessInformation().first) << ctx;
+      const auto dai_fd = item.getDirectAccessInformationViaFD();
+      if ( dai_fd.first != -1 ) {
+        ++checkedItemCountFD;
+        EXPECT_EQ(item.getData(), readItemData(dai_fd, item.getSize())) << ctx;
+      }
+    }
+  }
+  ASSERT_NE(0, checkedItemCountFD);
+}
+
 } // unnamed namespace
