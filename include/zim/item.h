@@ -34,7 +34,6 @@ namespace zim
   {
     public: // types
       typedef std::pair<std::string, offset_type> DirectAccessInfo;
-      typedef std::pair<int, offset_type> DirectAccessViaFDInfo;
 
     public: // functions
       explicit Item(std::shared_ptr<FileImpl> file_, entry_index_type idx_);
@@ -82,25 +81,6 @@ namespace zim
        *         return a pair of `{"", 0}`
        */
       DirectAccessInfo getDirectAccessInformation() const;
-
-      /** Direct access information using a file descriptor.
-       *
-       * Similar to getDirectAccessInformation(), but returns a file descriptor
-       * instead of the file path.
-       *
-       * @return A pair of file-descriptor/offset specifying where read the
-       *         content. The content must be read from the returned
-       *         file-descriptor only via `pread()` (no `seek()`-ing or
-       *         otherwise changing the state of the file-descriptor is
-       *         allowed).
-       *         If it is not possible to have direct access for this item,
-       *         a `{-1, 0}` pair is returned. Otherwise, the returned
-       *         file-descriptor is valid only for the life-time of the
-       *         `zim::Archive` object from which this `Item` object has been
-       *         obtained.
-       */
-      // TODO: rename this method
-      DirectAccessViaFDInfo getDirectAccessInformationViaFD() const;
 
       entry_index_type getIndex() const   { return m_idx; }
 

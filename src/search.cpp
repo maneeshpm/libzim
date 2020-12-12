@@ -135,40 +135,6 @@ class LevenshteinDistanceMaker : public Xapian::KeyMaker {
     size_t value_index;
 };
 
-#ifndef _WIN32
-std::string getRealPath(const std::string& path)
-{
-  std::vector<char> linkname(128, '\0');
-
-  while ( true )
-  {
-    ssize_t r = readlink(path.c_str(), &linkname[0], linkname.size());
-
-    if (r == -1) {
-      throw std::runtime_error("Failed to readlink: " + path);
-    }
-
-    if ( (size_t)r < linkname.size() ) {
-      const std::string result(linkname.begin(), linkname.begin()+r);
-      return result;
-    }
-    linkname.resize(2*linkname.size());
-  }
-}
-#endif
-
-std::string getFilePathFromFD(int fd)
-{
-#ifdef _WIN32
-  throw std::runtime_error("getFilePathFromFD() is not implemented under Windows");
-#else
-  std::ostringstream oss;
-  oss << "/dev/fd/" << fd;
-
-  return getRealPath(oss.str());
-#endif
-}
-
 }
 #endif
 
@@ -305,23 +271,22 @@ Search::iterator Search::begin() const {
             continue;
         }
         auto xapianEntry = Entry(impl, entry_index_type(r.second));
-        auto accessInfo = xapianEntry.getItem().getDirectAccessInformationViaFD();
+        auto accessInfo = xapianEntry.getItem().getDirectAccessInformation();
         if (accessInfo.second == 0) {
             continue;
         }
 
-        const std::string filepath = getFilePathFromFD(accessInfo.first);
         DEFAULTFS::FD databasefd;
         try {
-            databasefd = DEFAULTFS::openFile(filepath);
+            databasefd = DEFAULTFS::openFile(accessInfo.first);
         } catch (...) {
-            std::cerr << "Impossible to open " << filepath << std::endl;
+            std::cerr << "Impossible to open " << accessInfo.first << std::endl;
             std::cerr << strerror(errno) << std::endl;
             continue;
         }
         if (!databasefd.seek(offset_t(accessInfo.second))) {
             std::cerr << "Something went wrong seeking databasedb "
-                      << filepath << std::endl;
+                      << accessInfo.first << std::endl;
             std::cerr << "dbOffest = " << accessInfo.second << std::endl;
             continue;
         }
@@ -330,7 +295,7 @@ Search::iterator Search::begin() const {
             database = Xapian::Database(databasefd.release());
         } catch( Xapian::DatabaseError& e) {
             std::cerr << "Something went wrong opening xapian database for zimfile "
-                      << filepath << std::endl;
+                      << accessInfo.first << std::endl;
             std::cerr << "dbOffest = " << accessInfo.second << std::endl;
             std::cerr << "error = " << e.get_msg() << std::endl;
             continue;
