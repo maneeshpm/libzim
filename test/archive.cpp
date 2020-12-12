@@ -282,8 +282,8 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
   EXPECT_EQ(archive1.getClusterCount(), archive2.getClusterCount());
 
   ASSERT_EQ(archive1.getEntryCount(), archive2.getEntryCount());
-  const std::string mainEntryTitle = archive1.getMainEntry().getTitle();
-  ASSERT_EQ(mainEntryTitle, archive2.getMainEntry().getTitle());
+  const zim::Entry mainEntry = archive1.getMainEntry();
+  ASSERT_EQ(mainEntry.getTitle(), archive2.getMainEntry().getTitle());
 
   ASSERT_NE(0, archive1.getEntryCount()); // ==> below loop is not a noop
   {
@@ -328,14 +328,16 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
     }
   }
 
+  if ( archive1.hasTitleIndex() )
   {
     zim::Search search1(archive1);
     zim::Search search2(archive2);
     search1.set_suggestion_mode(true);
     search2.set_suggestion_mode(true);
-    search1.set_query(mainEntryTitle);
-    search2.set_query(mainEntryTitle);
-    ASSERT_EQ(search1.begin().get_url(), search2.begin().get_url());
+    search1.set_query(mainEntry.getTitle());
+    search2.set_query(mainEntry.getTitle());
+    ASSERT_EQ(mainEntry.getPath(), search1.begin().get_url());
+    ASSERT_EQ(mainEntry.getPath(), search2.begin().get_url());
     ASSERT_EQ(std::distance(search1.begin(), search1.end()),
               std::distance(search2.begin(), search2.end()));
   }
