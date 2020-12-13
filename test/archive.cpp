@@ -328,19 +328,21 @@ void checkEquivalence(const zim::Archive& archive1, const zim::Archive& archive2
     }
   }
 
-//if ( archive1.hasTitleIndex() )
-//{
-//  zim::Search search1(archive1);
-//  zim::Search search2(archive2);
-//  search1.set_suggestion_mode(true);
-//  search2.set_suggestion_mode(true);
-//  search1.set_query(mainEntry.getTitle());
-//  search2.set_query(mainEntry.getTitle());
-//  ASSERT_EQ(mainEntry.getPath(), search1.begin().get_url());
-//  ASSERT_EQ(mainEntry.getPath(), search2.begin().get_url());
-//  ASSERT_EQ(std::distance(search1.begin(), search1.end()),
-//            std::distance(search2.begin(), search2.end()));
-//}
+  if ( archive1.hasTitleIndex() )
+  {
+    zim::Search search1(archive1);
+    zim::Search search2(archive2);
+    search1.set_suggestion_mode(true);
+    search2.set_suggestion_mode(true);
+    search1.set_query(mainEntry.getTitle());
+    search2.set_query(mainEntry.getTitle());
+    ASSERT_NE(0, search1.get_matches_estimated());
+    ASSERT_EQ(search1.get_matches_estimated(), search2.get_matches_estimated());
+    ASSERT_EQ(mainEntry.getPath(), search1.begin().get_url());
+    ASSERT_EQ(mainEntry.getPath(), search2.begin().get_url());
+    ASSERT_EQ(std::distance(search1.begin(), search1.end()),
+              std::distance(search2.begin(), search2.end()));
+  }
 }
 
 TEST(ZimArchive, multipart)
